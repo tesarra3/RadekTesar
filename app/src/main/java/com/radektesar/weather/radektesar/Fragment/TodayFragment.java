@@ -1,21 +1,32 @@
 package com.radektesar.weather.radektesar.Fragment;
 
 import android.app.Fragment;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
 
-import com.radektesar.weather.radektesar.Provider.WorldWeatherOnlineApiProvider;
+import com.google.gson.Gson;
+import com.radektesar.weather.radektesar.Client.JSONParser;
 import com.radektesar.weather.radektesar.R;
-import com.radektesar.weather.radektesar.Request.Query;
-import com.radektesar.weather.radektesar.Response.WeatherResponse;
+import com.radektesar.weather.radektesar.Response.CurrentCondition;
+import com.radektesar.weather.radektesar.Response.Weather;
 import com.radektesar.weather.radektesar.Response.WorldWeatherOnlineResponse;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import butterknife.ButterKnife;
 import butterknife.InjectView;
-import it.restrung.rest.cache.RequestCache;
-import it.restrung.rest.client.ContextAwareAPIDelegate;
+
 
 
 
@@ -24,24 +35,29 @@ import it.restrung.rest.client.ContextAwareAPIDelegate;
  */
 public class TodayFragment extends Fragment {
     @InjectView(R.id.TodayCityState)
-    EditText todayCityState;
+    TextView todayCityState;
     @InjectView(R.id.TodayTemperatureCondition)
-    EditText todayTemperatureCondition;
+    TextView todayTemperatureCondition;
     @InjectView(R.id.TodayHumidity)
-    EditText todayHumidity;
+    TextView todayHumidity;
     @InjectView(R.id.TodayPrecipitation)
-    EditText todayPrecipitation;
+    TextView todayPrecipitation;
     @InjectView(R.id.TodayPresure)
-    EditText todayPresure;
+    TextView todayPresure;
     @InjectView(R.id.TodayWindSpeed)
-    EditText todayWindSpeed;
+    TextView todayWindSpeed;
     @InjectView(R.id.TodayDiction)
-    EditText todayDiction;
+    TextView todayDiction;
     @InjectView(R.id.TodayIcon)
-    EditText todayIcon;
+    ImageView todayIcon;
 
-    private WeatherResponse mWeatherResponse;
-    private int done = 1000;
+    JSONParser jParser = new JSONParser();
+
+    public WorldWeatherOnlineResponse jsonUsers;
+
+    private Weather mWeatherResponse;
+    private CurrentCondition mCurrentCondition;
+
 
     public TodayFragment(){}
     private String ApiKey = "fc7523943d0c78dd9ead654f50b81";
@@ -51,37 +67,64 @@ public class TodayFragment extends Fragment {
                              Bundle savedInstanceState) {
 
         View rootView = inflater.inflate(R.layout.fragment_today, container, false);
+        ButterKnife.inject(TodayFragment.this, rootView);
 
-        toNevim();
+
+
+        new LoadAllProducts().execute();
+       // todayCityState.setText(mCurrentCondition.getHumidity());
 
 
         return rootView;
 
     }
-    public void toNevim(){
 
-        WorldWeatherOnlineApiProvider.getClient().query(new ContextAwareAPIDelegate<WorldWeatherOnlineResponse>(getActivity(),
-                WorldWeatherOnlineResponse.class, RequestCache.LoadPolicy.NEVER, RequestCache.StoragePolicy.DISABLED) {
-            @Override
-            public void onResults(WorldWeatherOnlineResponse worldWeatherOnlineResponse) {
-                //  Toast.makeText(getBaseContext(), worldWeatherOnlineResponse.getData().getCurrentConditionList().get(0).getWeatherDesc().get(0).getValue(), Toast.LENGTH_LONG).show();
-                todayCityState.setText(getString(mWeatherResponse.getTempMinC()));
-                todayTemperatureCondition.setText(getString(mWeatherResponse.getTempMinC()));
-                todayHumidity.setText(getString(mWeatherResponse.getTempMinC()));
-                todayPrecipitation.setText(getString(mWeatherResponse.getTempMinC()));
-                todayPresure.setText(getString(mWeatherResponse.getTempMinC()));
-                todayWindSpeed.setText(getString(mWeatherResponse.getTempMinC()));
-                todayDiction.setText(getString(mWeatherResponse.getTempMinC()));
-                todayIcon.setText(getString(mWeatherResponse.getTempMinC()));
-            }
 
-            @Override
-            public void onError(Throwable e) {
+    public class LoadAllProducts extends AsyncTask<String, String, String> {
 
-            }
-        }, ApiKey, 3, Query.latLng(48.85, 2.35));
 
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+
+        }
+
+
+        protected String doInBackground(String... args) {
+            // Building Parameters
+
+            List<NameValuePair> params = new ArrayList<NameValuePair>();
+            String url_all_products = "https://api.worldweatheronline.com/free/v2/weather.ashx";
+            String paramss = "format=json&num_of_days=3&key=fc7523943d0c78dd9ead654f50b81&q=Prague";
+            params.add(new BasicNameValuePair("USERNAME",paramss));
+            JSONObject json = jParser.makeHttpRequest(url_all_products, "GET", params);
+
+            Gson gson = new Gson();
+            jsonUsers = gson.fromJson(json.toString(), WorldWeatherOnlineResponse.class);
+
+
+
+            Log.d("Server Response: ", json.toString());
+
+
+            return null;
+        }
+
+
+        protected void onPostExecute(String file_url) {
+//TODO move strings to xml
+            //TODO make version for miles and F
+            todayCityState.setText(jsonUsers.getData().getRequest().get(0).getQuery());
+            todayTemperatureCondition.setText(jsonUsers.getData().getCurrentCondition().get(0).getTempC() + "°C| " + jsonUsers.getData().getCurrentCondition().get(0).getWeatherDesc().get(0).getValue());
+            todayHumidity.setText(jsonUsers.getData().getCurrentCondition().get(0).getHumidity() + "%");
+            todayPrecipitation.setText(jsonUsers.getData().getCurrentCondition().get(0).getPrecipMM() + " mm");
+            todayPresure.setText(jsonUsers.getData().getCurrentCondition().get(0).getPressure() + " hPa");
+            todayWindSpeed.setText(jsonUsers.getData().getCurrentCondition().get(0).getWindspeedKmph() + " Km/h");
+            todayDiction.setText(jsonUsers.getData().getCurrentCondition().get(0).getWinddir16Point());
+
+        }
 
     }
-
 }
