@@ -3,9 +3,12 @@ package com.radektesar.weather.radektesar.Activity;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.app.FragmentTransaction;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.support.v4.app.ActionBarDrawerToggle;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.widget.DrawerLayout;
 import android.os.Bundle;
 import android.util.Log;
@@ -15,29 +18,25 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import com.radektesar.weather.radektesar.Adapter.NavDrawerListAdapter;
+import com.radektesar.weather.radektesar.Fragment.AboutDialog;
 import com.radektesar.weather.radektesar.Fragment.ForecastFragment;
 import com.radektesar.weather.radektesar.Fragment.TodayFragment;
-import com.radektesar.weather.radektesar.Provider.WorldWeatherOnlineApiProvider;
+
 import com.radektesar.weather.radektesar.R;
-import com.radektesar.weather.radektesar.Request.Query;
-import com.radektesar.weather.radektesar.Response.WeatherResponse;
-import com.radektesar.weather.radektesar.Response.WorldWeatherOnlineResponse;
+import com.radektesar.weather.radektesar.Response.Weather;
 import com.radektesar.weather.radektesar.model.NavDrawerItem;
 
 import java.util.ArrayList;
 
 import butterknife.InjectView;
-import it.restrung.rest.cache.RequestCache;
-import it.restrung.rest.client.ContextAwareAPIDelegate;
 
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity{
     @InjectView(R.id.TodayCityState)
     EditText todayCityState;
-    private WeatherResponse mWeatherResponse;
+    private Weather mWeatherResponse;
 
     private DrawerLayout mDrawerLayout;
     private ListView mDrawerList;
@@ -55,7 +54,7 @@ public class MainActivity extends Activity {
 
     private ArrayList<NavDrawerItem> navDrawerItems;
     private NavDrawerListAdapter adapter;
-    private static String ApiKey = "fc7523943d0c78dd9ead654f50b81";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,7 +63,7 @@ public class MainActivity extends Activity {
 
 
 
-        toNevim();
+
 
 
         mTitle = mDrawerTitle = getTitle();
@@ -155,11 +154,18 @@ public class MainActivity extends Activity {
         // Handle action bar actions click
         switch (item.getItemId()) {
             case R.id.action_settings:
+                startActivity(new Intent(MainActivity.this, SettingsActivity.class));
                 return true;
+            case R.id.action_about:
+                AboutDialog newFragment = new AboutDialog();
+
+                newFragment.show(getFragmentManager(), String.valueOf(AboutDialog.class));
+
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
+
 
     /* *
      * Called when invalidateOptionsMenu() is triggered
@@ -231,23 +237,9 @@ public class MainActivity extends Activity {
         mDrawerToggle.onConfigurationChanged(newConfig);
     }
 
-    public void toNevim(){
-
-        WorldWeatherOnlineApiProvider.getClient().query(new ContextAwareAPIDelegate<WorldWeatherOnlineResponse>(this,
-                WorldWeatherOnlineResponse.class, RequestCache.LoadPolicy.NEVER, RequestCache.StoragePolicy.DISABLED) {
-            @Override
-            public void onResults(WorldWeatherOnlineResponse worldWeatherOnlineResponse) {
-                //  Toast.makeText(getBaseContext(), worldWeatherOnlineResponse.getData().getCurrentConditionList().get(0).getWeatherDesc().get(0).getValue(), Toast.LENGTH_LONG).show();
-                todayCityState.setText(mWeatherResponse.getTempMinC());
-            }
-
-            @Override
-            public void onError(Throwable e) {
-
-            }
-        }, ApiKey, 3, Query.latLng(48.85, 2.35));
 
 
-    }
+
+
 
 }
